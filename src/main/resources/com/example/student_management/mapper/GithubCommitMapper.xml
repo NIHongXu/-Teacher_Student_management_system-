@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.student_management.Mapper.GithubCommitMapper">
+
+    <resultMap id="CommitResultMap" type="com.example.student_management.entity.GithubCommit">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="studentId" column="student_id" jdbcType="INTEGER"/>
+        <result property="repoUrl" column="repo_url" jdbcType="VARCHAR"/>
+        <result property="commitHash" column="commit_hash" jdbcType="VARCHAR"/>
+        <result property="commitMessage" column="commit_message" jdbcType="VARCHAR"/>
+        <result property="commitDate" column="commit_date" jdbcType="TIMESTAMP"/>
+        <result property="linesAdded" column="lines_added" jdbcType="INTEGER"/>
+        <result property="linesDeleted" column="lines_deleted" jdbcType="INTEGER"/>
+
+        <association property="student" column="student_id"
+                     select="com.example.student_management.mapper.StudentMapper.selectById"/>
+    </resultMap>
+
+    <resultMap id="CommitStatsResultMap" type="com.example.student_management.dto.GithubCommitStats">
+        <result property="activeDays" column="active_days" jdbcType="INTEGER"/>
+        <result property="totalCommits" column="total_commits" jdbcType="INTEGER"/>
+        <result property="totalAdded" column="total_added" jdbcType="INTEGER"/>
+        <result property="totalDeleted" column="total_deleted" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <select id="selectByStudentId" resultMap="CommitResultMap">
+        SELECT
+            student_id,
+            repo_url,
+            commit_hash,
+            commit_message,
+            commit_date,
+            lines_added,
+            lines_deleted
+        FROM github_commit
+        WHERE student_id = #{studentId}
+        ORDER BY commit_date DESC
+    </select>
+
+    <select id="selectRecentByClassId" resultMap="CommitResultMap">
+        SELECT
+            gc.student_id,
+            gc.repo_url,
+            gc.commit_hash,
+            gc.commit_message,
+            gc.commit_date,
+            gc.lines_added,
+            gc.lines_deleted
+        FROM github_commit gc
+                 JOIN student s ON gc.student_id = s.student_id
+        WHERE s.class_id = #{classId}
+        ORDER BY gc.commit_date DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectStatsByStudentId" resultMap="CommitStatsResultMap">
+        SELECT
+            COUNT(DISTINCT DATE(commit_date)) AS active_days,
+            COUNT(*) AS total_commits,
+            SUM(lines_added) AS total_added,
+            SUM(lines_deleted) AS total_deleted
+        FROM github_commit
+        WHERE student_id = #{studentId}
+          AND commit_date BETWEEN #{startDate} AND #{endDate}
+    </select>
+
+    <insert id="insert" parameterType="com.example.student_management.entity.GithubCommit"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO github_commit (
+            student_id,
+            repo_url,
+            commit_hash,
+            commit_message,
+            commit_date,
+            lines_added,
+            lines_deleted
+        ) VALUES (
+                     #{studentId,jdbcType=INTEGER},
+                     #{repoUrl,jdbcType=VARCHAR},
+                     #{commitHash,jdbcType=VARCHAR},
+                     #{commitMessage,jdbcType=VARCHAR},
+                     #{commitDate,jdbcType=TIMESTAMP},
+                     #{linesAdded,jdbcType=INTEGER},
+                     #{linesDeleted,jdbcType=INTEGER}
+                 )
+    </insert>
+
+    <delete id="deleteByStudentId">
+        DELETE FROM github_commit
+        WHERE student_id = #{studentId,jdbcType=INTEGER}
+    </delete>
+
+    <!-- 批量插入 -->
+    <insert id="batchInsert" parameterType="list">
+        INSERT INTO github_commit (
+        student_id,
+        repo_url,
+        commit_hash,
+        commit_message,
+        commit_date,
+        lines_added,
+        lines_deleted
+        ) VALUES
+        <foreach collection="commits" item="commit" separator=",">
+            (
+            #{commit.studentId,jdbcType=INTEGER},
+            #{commit.repoUrl,jdbcType=VARCHAR},
+            #{commit.commitHash,jdbcType=VARCHAR},
+            #{commit.commitMessage,jdbcType=VARCHAR},
+            #{commit.commitDate,jdbcType=TIMESTAMP},
+            #{commit.linesAdded,jdbcType=INTEGER},
+            #{commit.linesDeleted,jdbcType=INTEGER}
+            )
+        </foreach>
+    </insert>
+</mapper>

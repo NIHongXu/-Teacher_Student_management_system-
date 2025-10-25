@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.student_management.Mapper.ScoreMapper">
+
+    <!-- 结果映射定义 -->
+    <resultMap id="ScoreResultMap" type="com.example.student_management.entity.Score">
+        <id column="score_id" property="scoreId" jdbcType="INTEGER"/>
+        <result column="student_id" property="studentId" jdbcType="INTEGER"/>
+        <result column="course_id" property="courseId" jdbcType="INTEGER"/>
+        <result column="score" property="score" jdbcType="DECIMAL"/>
+        <result column="semester" property="semester" jdbcType="VARCHAR"/>
+
+        <association property="student" javaType="com.example.student_management.entity.Student">
+            <result column="student_name" property="name"/>
+        </association>
+
+        <association property="course" javaType="com.example.student_management.entity.Course">
+            <result column="course_name" property="name"/>
+        </association>
+    </resultMap>
+
+    <!-- 根据ID查询成绩 -->
+    <select id="selectById" parameterType="java.lang.Integer" resultMap="ScoreResultMap">
+        SELECT
+            s.*,
+            st.name AS student_name,
+            c.name AS course_name
+        FROM score s
+                 JOIN student st ON s.student_id = st.student_id
+                 JOIN course c ON s.course_id = c.course_id
+        WHERE s.score_id = #{scoreId}
+    </select>
+
+    <!-- 条件查询成绩 -->
+    <select id="selectByCondition" resultMap="ScoreResultMap">
+        SELECT
+        s.*,
+        st.name AS student_name,
+        c.name AS course_name
+        FROM score s
+        JOIN student st ON s.student_id = st.student_id
+        JOIN course c ON s.course_id = c.course_id
+        <where>
+            <if test="studentId != null">AND s.student_id = #{studentId}</if>
+            <if test="courseId != null">AND s.course_id = #{courseId}</if>
+            <if test="semester != null">AND s.semester = #{semester}</if>
+            <if test="minScore != null">AND s.score &gt;= #{minScore}</if>
+            <if test="maxScore != null">AND s.score &lt;= #{maxScore}</if>
+        </where>
+        <if test="orderBy != null">ORDER BY ${orderBy} ${order}</if>
+    </select>
+</mapper>

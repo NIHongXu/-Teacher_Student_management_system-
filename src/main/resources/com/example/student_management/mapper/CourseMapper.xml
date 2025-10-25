@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.student_management.Mapper.CourseMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.student_management.entity.Course">
+        <id column="course_id" property="courseId" jdbcType="INTEGER"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="credit" property="credit" jdbcType="INTEGER"/>
+        <result column="hours" property="hours" jdbcType="INTEGER"/>
+        <result column="teacher_id" property="teacherId" jdbcType="INTEGER"/>
+
+        <association property="teacher" javaType="com.example.student_management.entity.Teacher">
+            <id column="teacher_id" property="teacherId"/>
+            <result column="teacher_name" property="name"/>
+            <result column="teacher_title" property="title"/>
+        </association>
+    </resultMap>
+
+    <!-- 根据ID查询课程 -->
+    <select id="selectById" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT
+            c.*,
+            t.name AS teacher_name,
+            t.title AS teacher_title
+        FROM course c
+                 LEFT JOIN teacher t ON c.teacher_id = t.teacher_id
+        WHERE c.course_id = #{courseId}
+    </select>
+
+    <!-- 条件查询课程 -->
+    <select id="selectByCondition" resultMap="BaseResultMap">
+        SELECT
+        c.*,
+        t.name AS teacher_name,
+        t.title AS teacher_title
+        FROM course c
+        LEFT JOIN teacher t ON c.teacher_id = t.teacher_id
+        <where>
+            <if test="name != null and name != ''">
+                AND c.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="teacherId != null">
+                AND c.teacher_id = #{teacherId}
+            </if>
+        </where>
+        ORDER BY c.course_id
+    </select>
+
+    <!-- 查询所有课程 -->
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT
+            c.*,
+            t.name AS teacher_name,
+            t.title AS teacher_title
+        FROM course c
+                 LEFT JOIN teacher t ON c.teacher_id = t.teacher_id
+        ORDER BY c.course_id ASC
+    </select>
+
+</mapper>

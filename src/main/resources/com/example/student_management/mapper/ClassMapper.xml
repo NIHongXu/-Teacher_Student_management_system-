@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.student_management.Mapper.ClassMapper">
+
+    <resultMap id="ClassResultMap" type="com.example.student_management.entity.Class">
+        <id column="class_id" property="classId" jdbcType="INTEGER"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="major" property="major" jdbcType="VARCHAR"/>
+        <result column="grade" property="grade" jdbcType="INTEGER"/>
+        <result column="head_teacher_id" property="headTeacherId" jdbcType="INTEGER"/>
+
+        <association property="headTeacher" javaType="com.example.student_management.entity.Teacher">
+            <id column="teacher_id" property="teacherId"/>
+            <result column="teacher_name" property="name"/>
+        </association>
+    </resultMap>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" parameterType="java.lang.Integer" resultMap="ClassResultMap">
+        SELECT
+            c.class_id, c.name, c.major, c.grade, c.head_teacher_id,
+            t.teacher_id, t.name AS teacher_name
+        FROM class c
+                 LEFT JOIN teacher t ON c.head_teacher_id = t.teacher_id
+        WHERE c.class_id = #{classId}
+    </select>
+
+    <!-- 条件查询 -->
+    <select id="selectByCondition" resultMap="ClassResultMap">
+        SELECT c.*, t.name as teacher_name
+        FROM class c
+        LEFT JOIN teacher t ON c.head_teacher_id = t.teacher_id
+        <where>
+            <if test="name != null">AND c.name LIKE CONCAT('%', #{name}, '%')</if>
+            <if test="major != null">AND c.major = #{major}</if>
+            <if test="grade != null">AND c.grade = #{grade}</if>
+        </where>
+        ORDER BY c.class_id
+    </select>
+
+    <!-- 新增：查询所有 -->
+    <select id="selectAll" resultMap="ClassResultMap">
+        SELECT
+            c.class_id, c.name, c.major, c.grade, c.head_teacher_id,
+            t.teacher_id, t.name AS teacher_name
+        FROM class c
+                 LEFT JOIN teacher t ON c.head_teacher_id = t.teacher_id
+        ORDER BY c.class_id
+    </select>
+</mapper>
